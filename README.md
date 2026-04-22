@@ -3,7 +3,7 @@
 Reference implementation for the **PatchChestCT** dataset — a large-scale 3D patch-level annotation dataset for localizing multiple abnormalities in chest CT.
 
 > **Dataset:** [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.16812648.svg)](https://doi.org/10.5281/zenodo.16812648)  
-> **Paper:** *PatchChestCT: A patch-level spatial annotation dataset for nine abnormalities in chest CT* (Scientific Data, under review)
+
 
 ---
 
