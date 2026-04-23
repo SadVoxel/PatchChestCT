@@ -144,15 +144,16 @@ class CTReportDatasetTrain(data.PersistentDataset):
         return image_tensor, annotations_grid
 
     def __getitem__(self, index):
-    
-        nii_file, input_text, onehotlabels = self.samples[index]
-        high_res_mask = self.get_high_res_annotation_mask(nii_file)
-        if high_res_mask is None:
-            return self.__getitem__(random.randint(0, len(self.samples) - 1))
-        video_tensor, annotations_grid = self.nii_img_to_tensor(nii_file, high_res_mask)
-        input_text = input_text.replace('"', '').replace('\'', '').replace('(', '').replace(')', '')
-        name_acc = nii_file.split("/")[-2]
-        return video_tensor, input_text, onehotlabels, name_acc, annotations_grid
+        for _ in range(len(self.samples)):
+            nii_file, input_text, onehotlabels = self.samples[index]
+            high_res_mask = self.get_high_res_annotation_mask(nii_file)
+            if high_res_mask is not None:
+                video_tensor, annotations_grid = self.nii_img_to_tensor(nii_file, high_res_mask)
+                input_text = input_text.replace('"', '').replace('\'', '').replace('(', '').replace(')', '')
+                name_acc = nii_file.split("/")[-2]
+                return video_tensor, input_text, onehotlabels, name_acc, annotations_grid
+            index = random.randint(0, len(self.samples) - 1)
+        raise RuntimeError("No valid annotated sample found in dataset")
 
 
 
@@ -164,6 +165,4 @@ if __name__ == "__main__":
     dataset = CTReportDatasetTrain(data_folder, csv_file, labels=labels)
     video, text, oh_labels, acc, ann_vol = dataset[0]
     print(ann_vol.shape)
-
-
 
