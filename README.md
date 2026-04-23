@@ -17,7 +17,7 @@ Each annotation is stored as a binary NumPy array (`.npz`) with shape **(24, 12,
 
 | Label file | Abnormality |
 |---|---|
-| `arterial_all_calcification.npz` | Arterial wall calcification |
+| `arterial_wall_calcification.npz` | Arterial wall calcification |
 | `coronary_wall_calcification.npz` | Coronary artery calcification |
 | `pericardial_effusion.npz` | Pericardial effusion |
 | `hiatal_hernia.npz` | Hiatal hernia |
@@ -63,7 +63,7 @@ def load_annotation(annotation_dir, volume_id, abnormality):
     return np.load(path)["arr_0"]  # shape: (24, 12, 12), dtype: bool
 
 # Example
-ann = load_annotation("./annotations_train", "train_1003_a_1", "arterial_all_calcification")
+ann = load_annotation("./annotations-train", "train_1003_a_1", "arterial_wall_calcification")
 print(ann.shape)   # (24, 12, 12)
 print(ann.sum())   # number of positive patches
 ```
@@ -78,8 +78,8 @@ print(ann.sum())   # number of positive patches
 project_root/
 ├── train_preprocessed/     # CT-RATE training volumes (obtain from CT-RATE)
 ├── valid_preprocessed/     # CT-RATE validation volumes
-├── annotations_train/      # PatchChestCT train annotations (from Zenodo)
-├── annotations_valid/      # PatchChestCT valid annotations (from Zenodo)
+├── annotations-train/      # PatchChestCT train annotations (from Zenodo)
+├── annotations-valid/      # PatchChestCT valid annotations (from Zenodo)
 ├── train_reports.csv
 ├── dataset_radiology_text_reports_validation_reports.csv
 ├── dataset_multi_abnormality_labels_train_predicted_labels.csv
@@ -116,4 +116,5 @@ Both scripts log to [Weights & Biases](https://wandb.ai) by default.
 The PatchChestCT annotations are released under [CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/), consistent with the CT-RATE Data Usage Agreement. The source CT volumes remain subject to the CT-RATE DUA and must be obtained via the official CT-RATE gated access procedure.
 
 ---
+
 
