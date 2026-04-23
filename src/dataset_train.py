@@ -64,8 +64,9 @@ class CTReportDatasetTrain(data.PersistentDataset):
                 for nii_file in nii_files:
                     file_name = os.path.basename(nii_file).replace("2.npz","1.npz")
                     subject_id = file_name.split("_")[1]
-                    annot_dir = "/annotations_train/" + file_name
-                    if not os.path.exists(annot_dir):
+                    case_id = file_name[:-4] if file_name.endswith(".npz") else file_name
+                    annot_dir = os.path.join("annotations-train", case_id)
+                    if not os.path.isdir(annot_dir):
                         continue
                     accession_number = nii_file.split("/")[-1]
                     accession_number = accession_number.replace(".npz", ".nii.gz")
@@ -93,7 +94,8 @@ class CTReportDatasetTrain(data.PersistentDataset):
     
     def get_high_res_annotation_mask(self, nii_file):
         fname = os.path.basename(nii_file).replace("2.npz", "1.npz")
-        annot_dir = f"annotations_train/{fname}"
+        case_id = fname[:-4] if fname.endswith(".npz") else fname
+        annot_dir = os.path.join("annotations-train", case_id)
         if not os.path.isdir(annot_dir):
             return None
         class_mapping = {
@@ -102,13 +104,13 @@ class CTReportDatasetTrain(data.PersistentDataset):
             "pleural_effusion": 12, "consolidation": 15, "bronchiectasis": 16
         }
         vol = np.zeros((24, 12, 12, 18), dtype=np.float32)
-        for json_file in glob.glob(os.path.join(annot_dir, "*.json")):
-            with open(json_file, "r", encoding='utf-8') as f:
-                annotation_data = json.load(f)
-            disease_name = annotation_data.get("disease")
+        for npz_file in glob.glob(os.path.join(annot_dir, "*.npz")):
+            stem = os.path.splitext(os.path.basename(npz_file))[0]
+            disease_name = stem.split("__")[0]  # drop duplicate suffix like __1
             if disease_name in class_mapping:
                 cid = class_mapping[disease_name]
-                vol[..., cid] = np.maximum(vol[..., cid], np.asarray(annotation_data["annotations"], np.float32))
+                ann = np.load(npz_file)["arr_0"].astype(np.float32)
+                vol[..., cid] = np.maximum(vol[..., cid], ann)
         vol = torch.from_numpy(vol.astype(np.float32))
         vol = vol.permute(3, 0, 1, 2)
         vol = vol.repeat_interleave(4,  dim=1)
@@ -162,4 +164,6 @@ if __name__ == "__main__":
     dataset = CTReportDatasetTrain(data_folder, csv_file, labels=labels)
     video, text, oh_labels, acc, ann_vol = dataset[0]
     print(ann_vol.shape)
+
+
 
