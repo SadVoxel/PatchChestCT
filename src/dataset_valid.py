@@ -58,8 +58,9 @@ class CTReportDatasetInfer(data.PersistentDataset):
                 nii_files = glob.glob(os.path.join(accession_folder, '*.npz'))
                 for nii_file in nii_files:
                     file_name = os.path.basename(nii_file).replace("2.npz","1.npz")
-                    annot_dir = "/annotations_valid/" + file_name
-                    if not os.path.exists(annot_dir):
+                    case_id = file_name[:-4] if file_name.endswith(".npz") else file_name
+                    annot_dir = os.path.join("annotations-valid", case_id)
+                    if not os.path.isdir(annot_dir):
                         continue
 
                     accession_number = nii_file.split("/")[-1]
@@ -89,7 +90,8 @@ class CTReportDatasetInfer(data.PersistentDataset):
 
     def get_high_res_annotation_mask(self, nii_file):
         fname = os.path.basename(nii_file).replace("2.npz", "1.npz")
-        annot_dir = f"annotations_valid/{fname}"
+        case_id = fname[:-4] if fname.endswith(".npz") else fname
+        annot_dir = os.path.join("annotations-valid", case_id)
         if not os.path.isdir(annot_dir):
             return None
         class_mapping = {
@@ -98,13 +100,13 @@ class CTReportDatasetInfer(data.PersistentDataset):
             "pleural_effusion": 12, "consolidation": 15, "bronchiectasis": 16
         }
         vol = np.zeros((24, 12, 12, 18), dtype=np.float32)
-        for json_file in glob.glob(os.path.join(annot_dir, "*.json")):
-            with open(json_file, "r", encoding='utf-8') as f:
-                annotation_data = json.load(f)
-            disease_name = annotation_data.get("disease")
+        for npz_file in glob.glob(os.path.join(annot_dir, "*.npz")):
+            stem = os.path.splitext(os.path.basename(npz_file))[0]
+            disease_name = stem.split("__")[0]
             if disease_name in class_mapping:
                 cid = class_mapping[disease_name]
-                vol[..., cid] = np.maximum(vol[..., cid], np.asarray(annotation_data["annotations"], np.float32))
+                ann = np.load(npz_file)["arr_0"].astype(np.float32)
+                vol[..., cid] = np.maximum(vol[..., cid], ann)
         vol = torch.from_numpy(vol.astype(np.float32))
         vol = vol.permute(3, 0, 1, 2)
         vol = vol.repeat_interleave(4,  dim=1)
@@ -157,5 +159,6 @@ if __name__ == "__main__":
 
     dataset = CTReportDatasetInfer(data_folder, csv_file, labels=labels)
     print(len(dataset))
-    for i in range(1000):
+    for i in range(min(1000, len(dataset))):
         print(dataset[i][0].shape)
+
